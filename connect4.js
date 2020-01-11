@@ -8,9 +8,24 @@ class Game {
   constructor(WIDTH = 6, HEIGHT = 7) {
     this.WIDTH = WIDTH;
     this.HEIGHT = HEIGHT;
-    this.currPlayer = 1;
     this.board = [];
+    this.boundHandleClick = this.handleClick.bind(this);
 
+    let startBtn = document.createElement("button")
+    startBtn.innerHTML = "Start Game!"
+    let body = document.querySelector("body")
+    body.prepend(startBtn)
+    startBtn.addEventListener("click", this.startGame.bind(this))
+  }
+  
+  startGame() {
+    let player1color=document.getElementById("player-1").value;
+    let player2color=document.getElementById("player-2").value;
+    this.player1 = new Player(player1color);
+    this.player2 = new Player(player2color);
+    this.currPlayer=this.player1.color
+    
+    this.restartGame()
     this.makeBoard();
     this.makeHtmlBoard();
   }
@@ -19,6 +34,7 @@ class Game {
     for (let y = 0; y < this.HEIGHT; y++) {
       this.board.push(Array.from({ length: this.WIDTH }));
     }
+    
   }
 
   makeHtmlBoard() {
@@ -27,7 +43,8 @@ class Game {
     // make column tops (clickable area for adding a piece to that column)
     const top = document.createElement('tr');
     top.setAttribute('id', 'column-top');
-    top.addEventListener('click', this.handleClick.bind(this));
+
+    top.addEventListener('click', this.boundHandleClick);
 
     for (let x = 0; x < this.WIDTH; x++) {
       const headCell = document.createElement('td');
@@ -64,6 +81,7 @@ class Game {
     const piece = document.createElement('div');
     piece.classList.add('piece');
     piece.classList.add(`p${this.currPlayer}`);
+    piece.style.backgroundColor = this.currPlayer;
     piece.style.top = -50 * (y + 2);
 
     const spot = document.getElementById(`${y}-${x}`);
@@ -71,7 +89,20 @@ class Game {
   }
 
   endGame(msg) {
-    alert(msg);
+    let endGameMsg = document.createElement("div")
+    endGameMsg.innerHTML = ""
+    endGameMsg.setAttribute("id","endgame-msg")
+    let body = document.querySelector("body")
+    body.append(endGameMsg)
+    document.getElementById("endgame-msg").innerHTML = msg;
+
+    this.removeHandleClick();
+
+  }
+
+  removeHandleClick(){
+    let top = document.getElementById("column-top")
+    top.removeEventListener("click",this.boundHandleClick);
   }
 
   handleClick(evt) {
@@ -98,10 +129,24 @@ class Game {
     }
 
     // switch players
-    this.currPlayer = this.currPlayer === 1 ? 2 : 1;
+    this.currPlayer = this.currPlayer=== this.player1.color ? this.player2.color : this.player1.color;
   }
 
   checkForWin() {
+
+    function _win(cells) {
+      // Check four cells to see if they're all color of current player
+      //  - cells: list of four (y, x) cells
+      //  - returns true if all are legal coordinates & all match currPlayer
+      return cells.every(
+        ([y, x]) =>
+          y >= 0 &&
+          y < this.HEIGHT &&
+          x >= 0 &&
+          x < this.WIDTH &&
+          this.board[y][x] === this.currPlayer
+      );
+    }
 
     for (let y = 0; y < this.HEIGHT; y++) {
       for (let x = 0; x < this.WIDTH; x++) {
@@ -113,32 +158,29 @@ class Game {
         const diagDL = [[y, x], [y + 1, x - 1], [y + 2, x - 2], [y + 3, x - 3]];
 
         // find winner (only checking each win-possibility as needed)
-        if (this._win(horiz) || this._win(vert) || this._win(diagDR) || this._win(diagDL)) {
+        if (_win.call(this, horiz) || _win.call(this, vert) || _win.call(this, diagDR) || _win.call(this, diagDL)) {
           return true;
         }
       }
     }
   }
-  _win(cells) {
-    // Check four cells to see if they're all color of current player
-    //  - cells: list of four (y, x) cells
-    //  - returns true if all are legal coordinates & all match currPlayer
-    return cells.every(
-      ([y, x]) =>
-        y >= 0 &&
-        y < this.HEIGHT &&
-        x >= 0 &&
-        x < this.WIDTH &&
-        this.board[y][x] === this.currPlayer
-    );
-  }
 
+  restartGame() {
+    if(document.getElementById("endgame-msg")){
+      let endGameMsg = document.getElementById("endgame-msg");
+      endGameMsg.innerHTML = "";
+    }
+    let HTMLboard =document.querySelector("#board");
+    HTMLboard.innerHTML = ""
+    this.board=[]
+  }
 }
 
-// let newGame= new Game;
+class Player{
+  constructor(color){
+    this.color=color;
+  }
+}
 
-let startGame = document.createElement("button")
-startGame.innerHTML= "Start Game!"
-let body = document.querySelector("body")
-body.append(startGame)
-// startGame.addEventListener("click",newGame)
+
+new Game();
